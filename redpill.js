@@ -22,6 +22,8 @@ var redpill = (function($, undefined) {
     if (self._lhsTable === undefined) {
       var actualTable = self._lhsTable = $('<table/>');
       self._lhsTbody = $('<tbody/>');
+      self._lhsHead = $('<thead/>');
+      actualTable.append(self._lhsHead);
       actualTable.append(self._lhsTbody);
       actualTable.appendTo(lhsInput);
     }
@@ -30,6 +32,9 @@ var redpill = (function($, undefined) {
     if (self._rhsTable === undefined) {
       var actualTable = self._rhsTable = $('<table/>');
       self._rhsTbody = $('<tbody/>');
+      self._rhsHead = $('<thead/>');
+      self._rhsHead.append($('<th/>').text('value'));
+      actualTable.append(self._rhsHead);
       actualTable.append(self._rhsTbody);
       actualTable.appendTo(rhsInput);
     }
@@ -51,6 +56,8 @@ var redpill = (function($, undefined) {
     defs.forEach(function(def) {
       vars.push(def);
     });
+
+    self._context = new Context();
 
     var ensureTable = function(table, numRow, numCol) {
       var tableLength = table.children().length;
@@ -89,7 +96,7 @@ var redpill = (function($, undefined) {
 
     {
       var tableArray = ensureTable(lhsTable, vars.length, vars.length);
-      this._lhs = tableArray;
+      self._lhs = tableArray;
 
       for (var i = 0; i < vars.length; ++i) {
         for (var j = 0; j <= vars.length; ++j) {
@@ -99,10 +106,19 @@ var redpill = (function($, undefined) {
           }
         }
       }
+
+      var lhsHead = self._lhsHead;
+      lhsHead.children().remove();
+      for (var i = 0; i < vars.length; ++i) {
+        var head = $('<th/>').addClass('var-id').text(vars[i]);
+        lhsHead.append(head);
+      }
     }
 
     {
       var tableArray = ensureTable(rhsTable, vars.length, 1);
+      self._rhs = tableArray;
+
       for (var i = 0; i < vars.length; ++i) {
         var box = $(tableArray[i][0]);
         if (box.children().length === 0) {
@@ -119,7 +135,22 @@ var redpill = (function($, undefined) {
     var lhsInput = self._lhs;
     var rhsInput = self._rhs;
 
-    var context = new Context();
+    var context = self._context;
+
+    var lhsCoefficients = [];
+    for (var i = 0; i < lhsInput.length; ++i) {
+      var row = [];
+      for (var j = 0; j < lhsInput[i].length; ++j) {
+        var str = $(lhsInput[i][j]).children().first().val();
+        if (!str) {
+          row.push(0);
+        } else {
+          row.push(Shunt.parse(str, context));
+        }
+      }
+      lhsCoefficients.push(row);
+    }
+
     return Shunt.parse('pi', context);
   }
 
