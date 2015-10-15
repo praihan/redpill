@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <title>Red Pill</title>
+  <meta name='author' content='Pranjal Raihan'>
+  <meta name='description' content='System of Equations Solver'>
+  <meta name='keywords' content='matrix,equations,solver'>
+  <link rel='stylesheet' type='text/css' href='stylesheet.css'>
+</head>
+<body>
+  <textarea id='math-definitions' rows='10' cols='50'>
+x
+y
+z</textarea>
+  <button id='generate'>Generate</button>
+  <div id='math-input-lhs'></div>
+  <div id='math-input-rhs'></div>
+  <button id='solve'>Solve</button>
+  <div id='math-output'></div>
+
+  <script type='text/javascript' async
+    src='//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'>
+  </script>
+  <script type='text/javascript'
+    src='lib/javascript-shunting-yard/shunt.js'>
+  </script>
+  <script type='text/javascript'
+    src='//code.jquery.com/jquery-2.1.4.min.js'>
+  </script>
+  <script type='text/javascript'
+    src='redpill.js'>
+  </script>
+  <script type='text/javascript'>
+    jQuery(function() {
+      new redpill(
+        jQuery('#math-definitions'),
+        jQuery('#generate'),
+        jQuery('#math-input-lhs'),
+        jQuery('#math-input-rhs'),
+        jQuery('#solve'),
+        jQuery('#math-output')
+      );
+    });
+  </script>
+</body>
+</html>
