@@ -16,3 +16,7 @@ textarea.single-line {
   margin: 0;
   padding: 0;
 }
+
+#math-output {
+  white-space: pre-line;
+}

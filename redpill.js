@@ -3,18 +3,36 @@ var redpill = (function($, undefined) {
 
   var redpill = function(definitions, generate, lhsInput, rhsInput, solve, output) {
     var self = this;
+    self.args = {
+      definitions: definitions,
+      generate: generate,
+      lhsInput: lhsInput,
+      rhsInput: rhsInput,
+      solve: solve,
+      output: output
+    };
     solve.prop('disabled', true);
     solve.click(function() {
-      var parseOutput = self.eval();
-      output.text(parseOutput);
+      self.doSolve();
     });
     generate.click(function() {
-      var hasVars = self.generate(definitions.val(), lhsInput, rhsInput);
-      solve.prop('disabled', hasVars === false);
+      self.doGenerate();
     });
   }
 
   var Context;
+
+  redpill.prototype.doGenerate = function() {
+    var self = this;
+    var hasVars = self.generate(self.args.definitions.val(), self.args.lhsInput, self.args.rhsInput);
+    self.args.solve.prop('disabled', hasVars === false);
+  }
+
+  redpill.prototype.doSolve = function() {
+    var self = this;
+    var parseOutput = self.eval();
+    self.args.output.text(parseOutput);
+  }
 
   redpill.prototype.generate = function(defsText, lhsInput, rhsInput) {
     var self = this;
@@ -33,7 +51,6 @@ var redpill = (function($, undefined) {
       var actualTable = self._rhsTable = $('<table/>');
       self._rhsTbody = $('<tbody/>');
       self._rhsHead = $('<thead/>');
-      self._rhsHead.append($('<th/>').text('value'));
       actualTable.append(self._rhsHead);
       actualTable.append(self._rhsTbody);
       actualTable.appendTo(rhsInput);
@@ -57,6 +74,7 @@ var redpill = (function($, undefined) {
       vars.push(def);
     });
 
+    self._vars = vars;
     self._context = new Context();
 
     var ensureTable = function(table, numRow, numCol) {
@@ -102,7 +120,7 @@ var redpill = (function($, undefined) {
         for (var j = 0; j <= vars.length; ++j) {
           var box = $(tableArray[i][j]);
           if (box.children().length === 0) {
-            box.append(generateSingleLineTextbox());
+            box.append(generateSingleLineTextbox().addClass('equation-lhs-var'));
           }
         }
       }
@@ -122,8 +140,14 @@ var redpill = (function($, undefined) {
       for (var i = 0; i < vars.length; ++i) {
         var box = $(tableArray[i][0]);
         if (box.children().length === 0) {
-          box.append($('<div/>').addClass('equals').text('=')).append(generateSingleLineTextbox());
+          box.append($('<div/>').addClass('equals').text('=')).append(generateSingleLineTextbox().addClass('equation-rhs'));
         }
+      }
+
+      var rhsHead = self._rhsHead;
+      rhsHead.children().remove();
+      if (vars.length != 0) {
+        rhsHead.append($('<th/>').text('value'));
       }
     }
 
@@ -141,17 +165,106 @@ var redpill = (function($, undefined) {
     for (var i = 0; i < lhsInput.length; ++i) {
       var row = [];
       for (var j = 0; j < lhsInput[i].length; ++j) {
-        var str = $(lhsInput[i][j]).children().first().val();
+        var str = $(lhsInput[i][j]).find('.equation-lhs-var').first().val();
         if (!str) {
           row.push(0);
         } else {
-          row.push(Shunt.parse(str, context));
+          var parsedValue;
+          try {
+            parsedValue = Shunt.parse(str, context);
+          } catch (err) {
+            // show error
+          }
+          if (parsedValue !== undefined) {
+            row.push(parsedValue);
+          }
         }
       }
       lhsCoefficients.push(row);
     }
 
-    return Shunt.parse('pi', context);
+    var rhsCoefficients = [];
+    for (var i = 0; i < rhsInput.length; ++i) {
+      var str = $(rhsInput[i]).find('.equation-rhs').first().val();
+      if (!str) {
+        rhsCoefficients.push(0);
+      } else {
+        rhsCoefficients.push(parseFloat(str));
+      }
+    }
+    self.solveMatrix(lhsCoefficients, rhsCoefficients, function(solns) {
+      var vars = self._vars;
+      var outText = '';
+      for (var i = 0; i < vars.length; ++i) {
+        outText += vars[i] + ' = ' + solns[i] + '\n';
+      }
+      self.args.output.text(outText);
+    }, function() {
+      self.args.output.text('Could not find unique solutions for all variables given the equations.');
+    });
+  }
+
+  function prnt(m) {
+    console.log('BEGIN');
+    for (var i = 0; i < m.length; ++i) {
+      for (var j = 0; j < m[i].length; ++j) {
+        console.log(m[i][j]);
+      }
+    }
+    console.log('END');
+  }
+
+  redpill.prototype.solveMatrix = function(matrix, vector, done, err) {
+    var doGaussianElimination = function(m, v) {
+      var m = matrix;
+      var v = vector;
+      var len = v.length;
+      for (var p = 0; p < len; ++p) {
+        var max = p;
+        for (var i = p + 1; i < len; ++i) {
+          if (Math.abs(m[i][p]) > Math.abs(m[max][p])) {
+            max = i;
+          }
+        }
+        var temp = m[p];m[p] = m[max];m[max] = temp;
+        var t = v[p];v[p] = v[max];v[max] = t;
+        if (Math.abs(m[p][p]) <= 1e-10) {
+          err();
+          return;
+        }
+        for (var i = p + 1; i < len; ++i)
+        {
+          var alpha = m[i][p] / m[p][p];
+          v[i] -= alpha * v[p];
+          for (var j = p; j < len; ++j) {
+            m[i][j] -= alpha * m[p][j];
+          }
+        }
+      }
+      var x = Array(len);
+      for (i = 0; i < len; ++i) {
+        x[i] = 0;
+      }
+      for (var i = len - 1; i >= 0; --i)
+      {
+        var sum = 0;
+        for (var j = i + 1; j < len; ++j) {
+          sum += m[i][j] * x[j];
+        }
+        x[i] = ((v[i] - sum) / m[i][i]);
+      }
+      done(x);
+    }
+
+    doGaussianElimination(matrix, vector);
+  }
+
+  redpill.prototype.getLHSInputs = function() {
+    return this._lhs;
+  }
+
+  redpill.prototype.getRHSInputs = function() {
+    return this._rhs;
   }
 
   Context = function() {
