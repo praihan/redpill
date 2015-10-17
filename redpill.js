@@ -120,7 +120,31 @@ var redpill = (function($, undefined) {
         for (var j = 0; j <= vars.length; ++j) {
           var box = $(tableArray[i][j]);
           if (box.children().length === 0) {
-            box.append(generateSingleLineTextbox().addClass('equation-lhs-var'));
+            var id = 'lhs-input' + i.toString() + '-' + j.toString();
+            var mathId = 'mathjax-lhs' + i.toString() + '-' + j.toString();
+            var inputTextBox = generateSingleLineTextbox().addClass('equation-lhs-var').attr('id', id);
+            box.append(inputTextBox);
+            var mathjaxDiv = $('<div/>').addClass('mathjax-render').attr('id', mathId);
+            box.append(mathjaxDiv);
+            var keypressCallback = (function(id, mathId, i, j) {
+              return function(e) {
+                if (e.which == 13) {
+                  var inputText = $('#' + id).first().val();
+                  var outputDiv = $('#' + mathId).first();
+                  inputText += ' = ';
+                  var shuntText = $(self._lhs[i][j]).find('.equation-lhs-var').first().val();
+                  try {
+                    shuntText = Shunt.parse(shuntText, self._context);
+                  } catch (err) {
+                    shuntText = '??';
+                  }
+                  outputDiv.text('$$' + inputText + shuntText + '$$');
+                  self.updateMathJax(outputDiv[0]);
+                  return false;
+                }
+              }
+            })(id, mathId, i, j);
+            inputTextBox.bind("keypress", keypressCallback);
           }
         }
       }
@@ -204,14 +228,12 @@ var redpill = (function($, undefined) {
     });
   }
 
-  function prnt(m) {
-    console.log('BEGIN');
-    for (var i = 0; i < m.length; ++i) {
-      for (var j = 0; j < m[i].length; ++j) {
-        console.log(m[i][j]);
-      }
+  redpill.prototype.updateMathJax = function(el) {
+    if (el) {
+      MathJax.Hub.Queue(["Typeset",MathJax.Hub,el]);
+    } else {
+      MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
     }
-    console.log('END');
   }
 
   redpill.prototype.solveMatrix = function(matrix, vector, done, err) {

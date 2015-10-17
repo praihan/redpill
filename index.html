@@ -16,19 +16,27 @@
   <button id='solve'>Solve</button>
   <div id='math-output'></div>
 
-  <script type='text/javascript' async
-    src='//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'>
+  <script type='text/javascript'
+    src='https://cdn.mathjax.org/mathjax/latest/MathJax.js'>
   </script>
   <script type='text/javascript'
     src='lib/javascript-shunting-yard/shunt.js'>
   </script>
   <script type='text/javascript'
-    src='//code.jquery.com/jquery-2.1.4.min.js'>
+    src='https://code.jquery.com/jquery-2.1.4.min.js'>
   </script>
   <script type='text/javascript'
     src='redpill.js'>
   </script>
   <script type='text/javascript'>
+    MathJax.Hub.Config({
+      jax: ["input/TeX","output/HTML-CSS"],
+      extensions: ["tex2jax.js"],
+      tex2jax: {
+        inlineMath: [ ['\\(','\\)'] ],
+        displayMath: [ ['$$','$$'] ]
+      }
+    });
     jQuery(function() {
       var r = new redpill(
         jQuery('#math-definitions'),
