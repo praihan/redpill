@@ -1,3 +1,4 @@
-[submodule "lib/javascript-shunting-yard"]
-	path = lib/javascript-shunting-yard
+
+[submodule "public/lib/javascript-shunting-yard"]
+	path = public/lib/javascript-shunting-yard
 	url = https://github.com/prshreshtha/javascript-shunting-yard
