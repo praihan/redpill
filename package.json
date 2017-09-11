@@ -9,6 +9,7 @@
   "bugs": {
     "url": "https://github.com/prshreshtha/redpill/issues"
   },
+  "main": "app.js",
   "dependencies": {
     "express": "^4.13.3",
     "express-static": "^1.0.3"
